@@ -1,7 +1,7 @@
 This package can be used for mediation analysis with repeatedly measured mediators and survival outcomes. 
 The jm_mediate() function computes total, direct, and indirect effects over time from a joint model object (fit in JMbayes2). The function implements a g-computation approach, broadly following Zheng & Liu (2021).
 
-# to install jmed
+'# to install jmed
 devtools::install_github("linakramerr/jmed")
 library(jmed)
 
@@ -56,4 +56,4 @@ med_plot <- ggplot(data = sps_prothro$summary, aes(x = time, y = estimate, color
       axis.title = element_text(size = 11)
     )
  
-med_plot
+med_plot'
