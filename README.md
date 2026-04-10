@@ -62,4 +62,4 @@ med_plot <- ggplot(data = sps_prothro$summary, aes(x = time, y = estimate, color
 med_plot`
 
 ```
-![Output med_plot.](/man/00003.png)
+![Output med_plot.](/man/000003.png)
