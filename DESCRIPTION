@@ -1,0 +1,19 @@
+Package: jmed
+Type: Package
+Title: Mediation Analysis with Joint Models of Longitudinal and Time-to-Event Data
+Version: 0.1.1
+Author: Lina Kramer 
+Maintainer: Lina Kramer <linakramer015@gmail.com>
+Description: This package can be used for mediation analysis. jm_mediate() 
+    computes total, direct, and indirect effects over time from a joint model 
+    object (fit in JMbayes2). The function implements a g-computation approach, 
+    broadly following Zheng & Liu (2021).
+Imports: 
+  JMbayes2,
+  MASS,
+  statmod
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+Roxygen: list(markdown = TRUE)
