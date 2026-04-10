@@ -62,4 +62,4 @@ med_plot <- ggplot(data = sps_prothro$summary, aes(x = time, y = estimate, color
 med_plot`
 
 ```
-![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](electrocat.png)
+![Output med_plot.](00003.png)
