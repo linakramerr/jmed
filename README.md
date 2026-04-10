@@ -1,5 +1,5 @@
 This package can be used for mediation analysis with repeatedly measured mediators and survival outcomes. 
-The jm_mediate() function computes total, direct, and indirect effects over time from a joint model object (fit in JMbayes2). The function implements a g-computation approach, broadly following Zheng & Liu (2021).
+The jm_mediate() function computes total, direct, and indirect effects over time from a joint model object (fit in JMbayes2). It is a g-computation approach, broadly following Zheng & Liu (2021).
 
 ---
 
