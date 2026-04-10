@@ -2,13 +2,13 @@ This package can be used for mediation analysis with repeatedly measured mediato
 The jm_mediate() function computes total, direct, and indirect effects over time from a joint model object (fit in JMbayes2). The function implements a g-computation approach, broadly following Zheng & Liu (2021).
 
 
-`# to install jmed
-devtools::install_github("linakramerr/jmed")
-library(jmed)
+`# to install jmed`
+`devtools::install_github("linakramerr/jmed")`
+`library(jmed)`
 
-# Example use:
-##  First fit a joint model:
-library(JMbayes2)
+`# Example use:`
+`##  First fit a joint model:`
+`library(JMbayes2)`
 data("prothro") 
 data("prothros")
 
