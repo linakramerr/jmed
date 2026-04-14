@@ -14,8 +14,6 @@
 #' longitudinal submodel.
 #' @param time_eval Time points at which to compute effects.
 #' @param trt_name Name of the treatment variable.
-#' @param trt_name_long Name of the treatment variable in the longitudinal
-#' model.
 #' @param time_var Time variable in the longitudinal model.
 #' @param L_inner Number of draws for the random effects integration.
 #' @param n_mcmc How many of the mcmc draws are used.
@@ -58,8 +56,7 @@
 #'                   ds_surv = prothros,
 #'                   ds_long = prothro,
 #'                   time_eval = 0:12,
-#'                   trt_name = "treatprednisone",
-#'                   trt_name_long = "treat",
+#'                   trt_name = "treat",
 #'                   time_var = "time",
 #'                   n_mcmc = 500
 #'                   )
@@ -72,7 +69,6 @@ jm_mediate <- function(
     ds_long,
     time_eval,
     trt_name,
-    trt_name_long,
     time_var,
     L_inner = 50,
     n_mcmc = NULL,
@@ -110,7 +106,7 @@ jm_mediate <- function(
   # precompute X and Z matrices
   dm_list <- precompute_design_matrices(
     quad_list, time_eval, terms_FE, terms_RE,
-    template_df, time_var, trt_name_long, n_subjects
+    template_df, time_var, trt_name, n_subjects
   )
 
   # Storage
@@ -238,8 +234,21 @@ build_scenario_W <- function(jointfit, ds_surv, trt_name) {
   form_s <- formula(jointfit$model_info$terms$terms_Surv_noResp)
   W <- model.matrix(form_s, data = ds_surv)
   W <- W[, -1, drop = FALSE]
+
   trt_col <- which(colnames(W) == trt_name)
-  if (length(trt_col) != 1) stop("Treatment column '", trt_name, "' not found")
+  if (length(trt_col) == 0) {
+    trt_col <- grep(paste0("^", trt_name), colnames(W)) # find correct col
+    if (length(trt_col) > 1) {
+      stop("Multiple columns match '", trt_name, "': ",
+           paste(colnames(W)[trt_col], collapse = ", "),
+           ". Treatment factor must have exactly 2 levels.")
+    }
+    if (length(trt_col) == 0) {
+      stop("Treatment variable '", trt_name, "' not found in survival design matrix. ",
+           "Available columns: ", paste(colnames(W), collapse = ", "))
+    }
+    message(sprintf("Using column '%s' for treatment.", colnames(W)[trt_col]))
+  }
   W_trt <- W_ctrl <- W
   W_trt[, trt_col]  <- 1
   W_ctrl[, trt_col] <- 0
@@ -376,3 +385,4 @@ summarise_effects <- function(pop_surv, time_eval) {
   list(summary = summary_df, pop_cif = pop_cif,
        draws = list(NIE = nie_draws, NDE = nde_draws, TE = te_draws))
 }
+
