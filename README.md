@@ -70,4 +70,4 @@ med_plot
 
 
 ```
-![Output med_plot.](/man/000003.png)
+![Output med_plot.](/man/prednisone.png)
