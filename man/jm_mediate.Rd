@@ -10,7 +10,6 @@ jm_mediate(
   ds_long,
   time_eval,
   trt_name,
-  trt_name_long,
   time_var,
   L_inner = 50,
   n_mcmc = NULL,
@@ -29,9 +28,6 @@ longitudinal submodel.}
 \item{time_eval}{Time points at which to compute effects.}
 
 \item{trt_name}{Name of the treatment variable.}
-
-\item{trt_name_long}{Name of the treatment variable in the longitudinal
-model.}
 
 \item{time_var}{Time variable in the longitudinal model.}
 
@@ -84,8 +80,7 @@ med_prothro <- jm_mediate(
                   ds_surv = prothros,
                   ds_long = prothro,
                   time_eval = 0:12,
-                  trt_name = "treatprednisone",
-                  trt_name_long = "treat",
+                  trt_name = "treat",
                   time_var = "time",
                   n_mcmc = 500
                   )
