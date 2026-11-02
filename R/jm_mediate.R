@@ -6,7 +6,7 @@
 #' @import statmod
 #' @importFrom stats formula quantile
 #' @importFrom utils txtProgressBar setTxtProgressBar
-#' @importFrom MASS mvnorm
+#' @importFrom MASS mvrnorm
 #' @param jointfit A \code{\link[JMbayes2]{jm}} joint model object.
 #' @param ds_surv Survival data frame that was used to fit the relative risk
 #' submodel.
@@ -89,8 +89,10 @@ jm_mediate <- function(
   # Quadrature
   quad_list <- precompute_quadrature(
     time_eval,
-    knots_bs  = jointfit$control$knots$`1`,
-    degree_bs = jointfit$control$Bsplines_degree
+    knots_bs  = jointfit$control$knots[[1]],
+    degree_bs = jointfit$control$Bsplines_degree[1],
+    basis     = jointfit$control$basis[1],
+    timescale = jointfit$control$timescale_base_hazard[1]
   )
 
   # Precompute all design matrices
@@ -129,6 +131,11 @@ jm_mediate <- function(
     alphas_k    <- draws$alphas[k, ]
     gammas_k    <- draws$gammas[k, ]
     Bs_gammas_k <- draws$Bs_gammas[k, ]
+    # JMbayes2 fits the survival submodel with centred (and scaled) baseline
+    # covariates and association terms; bs_gammas are on that centred scale.
+    # Undo the centring exactly as JMbayes2 does internally (plot_hazard(),
+    # simulate()): log h0(t) = B(t) %*% bs_gammas - W_std_gammas - Wlong_std_alphas
+    shift_k     <- draws$W_std_gammas[k] + draws$Wlong_std_alphas[k]
     D_k         <- reconstruct_D(draws$D[k, ], n_re)
 
     # Constant across j and l
@@ -146,7 +153,7 @@ jm_mediate <- function(
       dm <- dm_list[[j]]
 
       # Get baseline hazard and fixed mediator parts
-      log_h0   <- as.numeric(qj$B %*% Bs_gammas_k)         # [Q]
+      log_h0   <- as.numeric(qj$B %*% Bs_gammas_k) - shift_k # [Q], un-centred
       fixed_z1 <- as.numeric(dm$X_z1 %*% betas_k)           # [n_sub * Q]
       fixed_z0 <- as.numeric(dm$X_z0 %*% betas_k)           # [n_sub * Q]
 
@@ -264,10 +271,18 @@ extract_mcmc_draws <- function(jointfit, n_mcmc = NULL) {
     Bs_gammas = do.call(rbind, jointfit$mcmc$bs_gammas),
     D         = do.call(rbind, jointfit$mcmc$D)
   )
+  # centring constants of the survival submodel (scalars per draw; 0 if absent)
+  get_shift <- function(name) {
+    m <- jointfit$mcmc[[name]]
+    if (is.null(m)) rep(0, nrow(draws$betas)) else rowSums(do.call(rbind, m))
+  }
+  draws$W_std_gammas     <- get_shift("W_std_gammas")
+  draws$Wlong_std_alphas <- get_shift("Wlong_std_alphas")
   n_total <- nrow(draws$betas) # automatically counts how many total mcmc draws
   if (!is.null(n_mcmc) && n_mcmc < n_total) {
     idx <- sample(n_total, n_mcmc)
-    draws <- lapply(draws, function(x) x[idx, , drop = FALSE])
+    draws <- lapply(draws, function(x)
+      if (is.matrix(x)) x[idx, , drop = FALSE] else x[idx])
   }
   draws # returns mcmc draws of betas, alphas, gammas, BS_gammas, and D
 }
@@ -277,14 +292,23 @@ extract_mcmc_draws <- function(jointfit, n_mcmc = NULL) {
 # time_eval: timepoints at which to evaluate (input by user)
 # knots_bs: B-spline knots, extracted from joint model object
 # degree_bs: B-spline degree, extracted from joint model object
-precompute_quadrature <- function(time_eval, knots_bs, degree_bs) {
+precompute_quadrature <- function(time_eval, knots_bs, degree_bs,
+                                  basis = "bs", timescale = "identity") {
   gl <- statmod::gauss.quad(15, kind = "legendre")
   lapply(time_eval, function(t_j) {
     if (t_j == 0) return(NULL)
     u <- (t_j / 2) * (gl$nodes + 1)
     w <- (t_j / 2) * gl$weights
-    B <- splines::splineDesign(knots = knots_bs, x = u,
-                               ord = degree_bs + 1, outer.ok = TRUE)
+    # same baseline basis as JMbayes2:::create_W0()
+    tt <- if (timescale == "identity") u else log(u)
+    B <- if (basis == "bs") {
+      splines::splineDesign(knots = knots_bs, x = tt,
+                            ord = degree_bs + 1, outer.ok = TRUE)
+    } else {
+      splines::ns(x = tt, knots = knots_bs[-c(1, length(knots_bs))],
+                  intercept = TRUE,
+                  Boundary.knots = knots_bs[c(1, length(knots_bs))])
+    }
     list(u = u, w = w, B = B) # returns list of length(time_eval)-1 including 15 quad points u, 15  weights w, and the B-spline design matrix
   })
 }
@@ -385,4 +409,3 @@ summarise_effects <- function(pop_surv, time_eval) {
   list(summary = summary_df, pop_cif = pop_cif,
        draws = list(NIE = nie_draws, NDE = nde_draws, TE = te_draws))
 }
-
